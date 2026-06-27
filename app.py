@@ -8,16 +8,14 @@ HTML = """
 <html>
 <head>
     <title>Time Complexity Visualizer</title>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         body{
-            font-family:Arial, sans-serif;
-            background:#f5f5f5;
-            text-align:center;
             margin:0;
-            padding:30px;
+            padding:20px;
+            background:#f2f2f2;
+            font-family:Arial,sans-serif;
         }
 
         .container{
@@ -26,25 +24,20 @@ HTML = """
             background:white;
             padding:20px;
             border-radius:10px;
-            box-shadow:0 0 10px rgba(0,0,0,.2);
+            box-shadow:0 0 10px rgba(0,0,0,0.2);
+            text-align:center;
         }
 
-        h2{
+        h1{
             color:#333;
         }
 
-        #slider{
+        input[type=range]{
             width:80%;
-            margin-top:15px;
-        }
-
-        #value{
-            font-weight:bold;
-            color:blue;
         }
 
         canvas{
-            margin-top:30px;
+            margin-top:20px;
         }
     </style>
 </head>
@@ -53,11 +46,11 @@ HTML = """
 
 <div class="container">
 
-<h2>Time Complexity Visualizer</h2>
+<h1>Time Complexity Visualizer</h1>
 
 <p>
-Select n :
-<span id="value">20</span>
+Input Size (n):
+<b id="value">20</b>
 </p>
 
 <input
@@ -75,87 +68,79 @@ value="20">
 
 let chart;
 
-async function loadData(n){
+async function updateChart(n){
 
-    document.getElementById("value").innerHTML=n;
+document.getElementById("value").innerHTML=n;
 
-    const response=await fetch("/data/"+n);
+const response=await fetch("/data/"+n);
 
-    const data=await response.json();
+const data=await response.json();
 
-    if(chart){
-        chart.destroy();
-    }
+if(chart){
+chart.destroy();
+}
 
-    chart=new Chart(document.getElementById("chart"),{
+chart=new Chart(document.getElementById("chart"),{
 
-        type:"line",
+type:"line",
 
-        data:{
+data:{
 
-            labels:data.labels,
+labels:data.labels,
 
-            datasets:[
+datasets:[
 
-            {
-                label:"O(1)",
-                data:data["O(1)"],
-                borderColor:"red",
-                fill:false
-            },
+{
+label:"O(1)",
+data:data.o1,
+borderColor:"red",
+fill:false
+},
 
-            {
-                label:"O(log n)",
-                data:data["O(log n)"],
-                borderColor:"blue",
-                fill:false
-            },
+{
+label:"O(log n)",
+data:data.ologn,
+borderColor:"blue",
+fill:false
+},
 
-            {
-                label:"O(n)",
-                data:data["O(n)"],
-                borderColor:"green",
-                fill:false
-            },
+{
+label:"O(n)",
+data:data.on,
+borderColor:"green",
+fill:false
+},
 
-            {
-                label:"O(n log n)",
-                data:data["O(n log n)"],
-                borderColor:"orange",
-                fill:false
-            },
+{
+label:"O(n log n)",
+data:data.onlogn,
+borderColor:"orange",
+fill:false
+},
 
-            {
-                label:"O(n²)",
-                data:data["O(n²)"],
-                borderColor:"purple",
-                fill:false
-            }
+{
+label:"O(n²)",
+data:data.on2,
+borderColor:"purple",
+fill:false
+}
 
-            ]
+]
 
-        },
+},
 
-        options:{
+options:{
+responsive:true
+}
 
-            responsive:true,
-
-            plugins:{
-                legend:{
-                    position:"top"
-                }
-            }
-
-        }
-
-    });
+});
 
 }
 
-loadData(20);
+updateChart(20);
 
 document.getElementById("slider").addEventListener("input",function(){
-    loadData(this.value);
+updateChart(this.value);
 });
 
 </script>
@@ -164,43 +149,33 @@ document.getElementById("slider").addEventListener("input",function(){
 </html>
 """
 
-
 @app.route("/")
 def home():
     return render_template_string(HTML)
 
-
 @app.route("/data/<int:n>")
 def data(n):
 
-    x=list(range(1,n+1))
+    labels=list(range(1,n+1))
 
-    o1=[1 for i in x]
+    o1=[1 for i in labels]
 
-    ologn=[math.log2(i) for i in x]
+    ologn=[math.log2(i) if i>0 else 0 for i in labels]
 
-    on=[i for i in x]
+    on=[i for i in labels]
 
-    onlogn=[i*math.log2(i) for i in x]
+    onlogn=[i*math.log2(i) if i>0 else 0 for i in labels]
 
-    on2=[i*i for i in x]
+    on2=[i*i for i in labels]
 
     return jsonify({
-
-        "labels":x,
-
-        "O(1)":o1,
-
-        "O(log n)":ologn,
-
-        "O(n)":on,
-
-        "O(n log n)":onlogn,
-
-        "O(n²)":on2
-
+        "labels":labels,
+        "o1":o1,
+        "ologn":ologn,
+        "on":on,
+        "onlogn":onlogn,
+        "on2":on2
     })
 
-
 if __name__=="__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0",port=5000,debug=True)
